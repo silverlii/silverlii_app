@@ -46,13 +46,14 @@ label{font-size:13px;color:var(--mut);display:block;margin-top:10px}
 </div>
 <script>
 // ===== 사장님이 수정할 부분 / 店主可修改 =====
-var CFG={endpoint:"https://script.google.com/macros/s/AKfycbwkIua0gymiBtt9ZGtMGZkEH4BUhY33Ii7Vp6Uge1V1wDU9kXFqnqtJFdGF83g3_PjZ/exec",wechat:"your_wechat_id",fee:0.1,min:3000,rate:0.0053,ship:[{k:5,krw:40000},{k:10,krw:70000}]}; // ship: 무게 구간별 EMS 배송비(예시 금액, 실제 요금으로 수정) // 위챗ID, 수수료율(5%), 원→위안 환율
-var PRODUCTS=[
+var CFG={endpoint:"https://script.google.com/macros/s/AKfycbzJOsWGcAOogJkm8vLj7uGcRkzbjgCTpqd7oMANzcqyJ9Sfbq4CZGqofueKyOa-XIQ/exec",wechat:"your_wechat_id",fee:0.1,min:3000,rate:0.0053,ship:[{k:5,krw:40000},{k:10,krw:70000}]}; // ship: 무게 구간별 EMS 배송비(예시 금액, 실제 요금으로 수정) // 위챗ID, 수수료율(5%), 원→위안 환율
+var SAMPLE=[
  {id:1,e:"☀️",zh:"防晒霜（示例）",ko:"선크림 (예시)",krw:18000},
  {id:2,e:"🧖",zh:"面膜 10片（示例）",ko:"마스크팩 10매 (예시)",krw:15000},
  {id:3,e:"💄",zh:"气垫粉底（示例）",ko:"쿠션 (예시)",krw:28000},
  {id:4,e:"💧",zh:"爽肤垫（示例）",ko:"토너패드 (예시)",krw:22000}
 ];
+var PRODUCTS=CFG.endpoint.indexOf("http")==0?[]:SAMPLE,cfgState="loading";
 // ======================================
 var T={
  t1:["韩国化妆品代购","한국 화장품 구매대행"],
@@ -63,14 +64,15 @@ var T={
  op:["颜色/尺码/备注","옵션/사이즈/메모"],qty:["数量","수량"],addl:["添加链接商品","링크 상품 추가"],
  ct:["购物清单","주문 목록"],empty:["还没有商品","담은 상품이 없습니다"],
  sub:["商品小计","상품 합계"],fee:["代购手续费","대행 수수료"],tot:["预计合计","예상 합계"],
- est:["* 价格为预估；链接商品确认后报价；运费按所选档位先行收取，称重后多退少补。","* 예상 금액이며 링크 상품은 확인 후 견적, 배송비는 선택한 구간 기준으로 먼저 결제, 실제 무게로 차액 정산."],
+ est:["* 价格为预估；链接商品确认后报价；运费按件数自动计算（1–4件5kg以内，5–10件10kg以内，11件以上需报价），先行收取，称重后多退少补。","* 예상 금액이며 링크 상품은 확인 후 견적, 배송비는 수량 기준 자동 계산(1~4개 5kg 미만, 5~10개 10kg 미만, 11개 이상 견적)이며 선결제 후 실제 무게로 차액 정산."],
  nm:["姓名","이름"],wx:["您的微信号","고객 위챗ID"],ad:["收货地址","배송 주소"],
  cp:["复制订单","주문서 복사"],cpd:["已复制！","복사됨!"],
  go:["复制后请发送到我的微信：","복사 후 아래 위챗으로 보내주세요:"],
  rm:["删除","삭제"],lt:["链接商品","링크 상품"],need:["请先添加商品","상품을 먼저 담아주세요"],
  agr:["请先勾选确认","확인 체크를 먼저 해주세요"],
  submit:["提交订单","주문하기"],sending:["提交中…","전송 중…"],done:["订单已提交！我们会通过微信联系您确认报价与付款。","주문이 접수되었습니다! 위챗으로 견적·결제 안내를 드립니다."],fail:["提交失败，请点击“复制订单”并发送到微信","전송 실패 — ‘주문서 복사’로 위챗에 보내주세요"],reqf:["请填写姓名、微信、电话和地址","이름·위챗·전화·주소를 입력해 주세요"],
- selw:["请先选择包裹重量","소포 무게를 먼저 선택해 주세요"],sz:["包裹重量（EMS）","소포 무게 (EMS)"],sp:["EMS运费","EMS 배송비"],
+ selw:["请先选择包裹重量","소포 무게를 먼저 선택해 주세요"],pl:["商品加载中…","상품 불러오는 중…"],pf:["商品加载失败，请使用“粘贴链接代购”或联系微信。","상품을 불러오지 못했습니다. ‘링크로 주문’을 이용하거나 위챗으로 문의해 주세요."],sold:["售罄","품절"],
+ quote:["需另行报价","별도 견적"],sz:["包裹数量与重量（EMS）","수량·무게 (EMS)"],sp:["EMS运费","EMS 배송비"],
  ph:["收件人电话（中国手机号）","수취인 전화(중국 휴대폰)"],pc:["邮编","우편번호"],
  ag:["我已了解：EMS运费按所选重量档位先行支付，称重后多退少补；中国海关可能征税、扣留或退回包裹；香水、含酒精的化妆水、喷雾类无法邮寄。","확인했습니다: EMS 배송비는 선택한 무게 구간 기준으로 먼저 결제하고 실제 무게 확인 후 차액을 정산하며, 중국 세관에서 관세 부과·압류·반송될 수 있고, 향수·알코올 함유 토너·스프레이류는 발송 불가입니다."],
  it:["配送说明 (EMS)","배송 안내 (EMS)"],
@@ -82,7 +84,12 @@ function fmt(n){return n.toLocaleString("ko-KR")+"₩"}
 function cny(w){return "≈ ¥"+(w*CFG.rate).toFixed(1)}
 function setL(l){L=l;draw()}
 function setT(i){tab=i;draw()}
-function setS(i){sh=i;draw()}
+function setS(i){}
+function qtyN(){var q=0;PRODUCTS.forEach(function(p){q+=cart[p.id]||0});links.forEach(function(l){q+=l.q});return q}
+function autoSh(){var q=qtyN();return q<1?-1:q<5?0:q<=10?1:2}
+function shipOk(){return sh>=0&&sh<CFG.ship.length}
+function shipKrw(){return shipOk()?CFG.ship[sh].krw:0}
+function shipTxt(){var z=L=="zh";var n=qtyN()+(z?"件 → ":"개 → ");return n+(sh==2?(z?"需报价":"견적 필요"):(z?CFG.ship[sh].k+"kg以内":CFG.ship[sh].k+"kg 미만"))}
 function feeOf(s){return s>0?Math.max(Math.round(s*CFG.fee),CFG.min):0}
 function chg(id,d){cart[id]=Math.max(0,(cart[id]||0)+d);draw()}
 function addLink(){
@@ -96,7 +103,7 @@ function orderText(){
  PRODUCTS.forEach(function(p){if(cart[p.id])o+="- "+p.zh+" ("+p.ko+") x"+cart[p.id]+" = "+fmt(p.krw*cart[p.id])+"\n"});
  links.forEach(function(l,i){o+="- 链接"+(i+1)+": "+l.u+" x"+l.q+(l.o?" ["+l.o+"]":"")+"\n"});
  var s=sum(),f=feeOf(s);
- var sf=sh>=0?CFG.ship[sh].krw:0;o+="\n商品小计: "+fmt(s)+"\n手续费: "+fmt(f)+"\nEMS运费 / 배송비: "+(sh>=0?fmt(sf)+" ("+CFG.ship[sh].k+"kg)":"待确认")+"\n合计(不含链接商品): "+fmt(s+f+sf)+" "+cny(s+f+sf)+"\n";
+ var sf=shipKrw();o+="\n商品小计: "+fmt(s)+"\n手续费: "+fmt(f)+"\nEMS运费 / 배송비: "+(shipOk()?fmt(sf)+" ("+CFG.ship[sh].k+"kg)":"需报价 / 견적 필요")+"\n合计(不含链接商品): "+fmt(s+f+sf)+" "+cny(s+f+sf)+"\n";
  o+="\n姓名: "+(n?n.value:"")+"\n微信: "+(w?w.value:"")+"\n电话: "+document.getElementById("fp").value+"\n邮编: "+document.getElementById("fz").value+"\n地址: "+(a?a.value:"")+"\n备注: 运费以实际称重为准 / 배송비는 실제 무게로 정산";
  return o}
 function submitO(){
@@ -107,12 +114,12 @@ function submitO(){
  if(!document.getElementById("fg").checked){b.textContent=tx("agr");return}
  var v=function(i){return document.getElementById(i).value.trim()};
  if(!v("fn")||!v("fw")||!v("fp")||!v("fa")){b.textContent=tx("reqf");return}
- var t=orderText(),s=sum(),f=feeOf(s),sf=CFG.ship[sh].krw;
+ var t=orderText(),s=sum(),f=feeOf(s),sf=shipKrw();
  document.getElementById("ot").value=t;
  var data={name:v("fn"),wechat:v("fw"),phone:v("fp"),zip:v("fz"),address:v("fa"),
   items:PRODUCTS.filter(function(p){return cart[p.id]}).map(function(p){return p.zh+" / "+p.ko+" x"+cart[p.id]}).join("; "),
   links:links.map(function(l){return l.u+" x"+l.q+(l.o?" ["+l.o+"]":"")}).join("; "),
-  subtotal:s,fee:f,shipTier:CFG.ship[sh].k+"kg",shipping:sf,total:s+f+sf,text:t};
+  subtotal:s,fee:f,shipTier:shipOk()?CFG.ship[sh].k+"kg":"QUOTE",shipping:sf,total:s+f+sf,text:t};
  if(CFG.endpoint.indexOf("http")!=0){b.textContent=tx("fail");return}
  b.textContent=tx("sending");b.disabled=true;
  fetch(CFG.endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)})
@@ -128,15 +135,17 @@ function copyO(){
  var t=orderText();document.getElementById("ot").value=t;
  try{navigator.clipboard.writeText(t).then(function(){b.textContent=tx("cpd")},function(){fb()})}catch(e){fb()}
  function fb(){var e=document.getElementById("ot");e.select();try{document.execCommand("copy");b.textContent=tx("cpd")}catch(x){}}}
-function draw(){
+function draw(){sh=autoSh();
  document.documentElement.lang=L=="zh"?"zh-CN":"ko";
  ["t1","t2"].forEach(function(k){document.getElementById(k).textContent=tx(k)});
  document.getElementById("bz").className=L=="zh"?"on":"";document.getElementById("bk").className=L=="ko"?"on":"";
  [0,1].forEach(function(i){var b=document.getElementById("tb"+i);b.textContent=tx("tb"+i);b.className=tab==i?"on":"";document.getElementById("v"+i).className=tab==i?"":"hide"});
  var h="";
  PRODUCTS.forEach(function(p){
-  h+='<div class="card p"><div class="em">'+p.e+'</div><div class="i"><b>'+(L=="zh"?p.zh:p.ko)+'</b><span class="mut">'+fmt(p.krw)+' '+cny(p.krw)+'</span></div>'+
-  '<div class="q"><button onclick="chg('+p.id+',-1)">−</button><span>'+(cart[p.id]||0)+'</span><button onclick="chg('+p.id+',1)">+</button></div></div>'});
+  var nm=L=="zh"?p.zh:p.ko;
+  h+='<div class="card p"><div class="em">'+(p.img?'<img src="'+esc(p.img)+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px">':(p.e||"🛍️"))+'</div><div class="i"><b>'+esc(nm)+'</b>'+(p.brand?'<span class="mut" style="display:block">'+esc(p.brand)+'</span>':'')+'<span class="mut">'+fmt(p.krw)+' '+cny(p.krw)+'</span></div>'+
+  (p.sold?'<span class="mut">'+tx("sold")+'</span>':'<div class="q"><button onclick="chg('+p.id+',-1)">−</button><span>'+(cart[p.id]||0)+'</span><button onclick="chg('+p.id+',1)">+</button></div>')+'</div>'});
+ if(!PRODUCTS.length)h='<p class="mut">'+tx(cfgState=="fail"?"pf":"pl")+'</p>';
  document.getElementById("v0").innerHTML=h;
  // keep link inputs while redrawing
  var v1=document.getElementById("v1");
@@ -145,11 +154,11 @@ function draw(){
  document.getElementById("l1").textContent=tx("lk");document.getElementById("lu").placeholder=tx("lkp");
  document.getElementById("l2").textContent=tx("op");document.getElementById("l3").textContent=tx("qty");document.getElementById("la").textContent=tx("addl");
  // cart
- var s=sum(),f=feeOf(s),sf=sh>=0?CFG.ship[sh].krw:0,c="<b>"+tx("ct")+"</b>",n=0;
+ var s=sum(),f=feeOf(s),sf=shipKrw(),c="<b>"+tx("ct")+"</b>",n=0;
  PRODUCTS.forEach(function(p){if(cart[p.id]){n++;c+='<div class="row"><span>'+(L=="zh"?p.zh:p.ko)+' ×'+cart[p.id]+'</span><span>'+fmt(p.krw*cart[p.id])+'</span></div>'}});
  links.forEach(function(l,i){n++;c+='<div class="row"><span style="word-break:break-all">'+tx("lt")+' '+(i+1)+' ×'+l.q+'<br><span class="mut">'+esc(l.u)+(l.o?' · '+esc(l.o):'')+'</span></span><button class="rm" onclick="delLink('+i+')">'+tx("rm")+'</button></div>'});
  if(!n)c+='<p class="mut">'+tx("empty")+'</p>';
- else c+='<div class="row tot"><span>'+tx("sub")+'</span><span>'+fmt(s)+'</span></div><div class="row"><span>'+tx("fee")+' ('+Math.round(CFG.fee*100)+'%'+(L=="zh"?"，最低":", 최소")+' '+fmt(CFG.min)+')</span><span>'+fmt(f)+'</span></div><label>'+tx("sz")+'</label><div class="tabs" style="margin:6px 0">'+CFG.ship.map(function(x,i){return '<button class="'+(sh==i?"on":"")+'" onclick="setS('+i+')">'+(L=="zh"?x.k+"kg以内":x.k+"kg 미만")+'</button>'}).join("")+'</div><div class="row"><span>'+tx("sp")+'</span><span>'+(sh>=0?fmt(sf)+' '+cny(sf):"—")+'</span></div><div class="row tot"><span>'+tx("tot")+'</span><span>'+fmt(s+f+sf)+' '+cny(s+f+sf)+'</span></div><p class="note">'+tx("est")+'</p>';
+ else c+='<div class="row tot"><span>'+tx("sub")+'</span><span>'+fmt(s)+'</span></div><div class="row"><span>'+tx("fee")+' ('+Math.round(CFG.fee*100)+'%'+(L=="zh"?"，最低":", 최소")+' '+fmt(CFG.min)+')</span><span>'+fmt(f)+'</span></div><div class="row"><span>'+tx("sz")+'</span><span>'+shipTxt()+'</span></div><div class="row"><span>'+tx("sp")+'</span><span>'+(sh==2?tx("quote"):fmt(sf)+" "+cny(sf))+'</span></div><div class="row tot"><span>'+tx("tot")+'</span><span>'+fmt(s+f+sf)+' '+cny(s+f+sf)+'</span></div><p class="note">'+tx("est")+'</p>';
  document.getElementById("cart").innerHTML=c;
  document.getElementById("info").innerHTML='<b>'+tx("it")+'</b><ul style="margin:6px 0 0;padding-left:18px">'+tx("il").split("|").map(function(s){return "<li>"+s+"</li>"}).join("")+'</ul>';
  // form (preserve typed values)
@@ -158,5 +167,18 @@ function draw(){
  fm.innerHTML='<label style="margin-top:0">'+tx("nm")+'</label><input id="fn"><label>'+tx("wx")+'</label><input id="fw"><label>'+tx("ph")+'</label><input id="fp" inputmode="tel"><label>'+tx("pc")+'</label><input id="fz" inputmode="numeric"><label>'+tx("ad")+'</label><textarea id="fa" rows="2"></textarea><label style="display:flex;gap:8px;align-items:flex-start;color:var(--tx)"><input id="fg" type="checkbox" style="width:auto;margin-top:4px"><span>'+tx("ag")+'</span></label><button class="btn" id="sb" onclick="submitO()">'+tx("submit")+'</button><button class="btn o" id="cb" onclick="copyO()">'+tx("cp")+'</button><textarea id="ot" rows="5" readonly style="font-size:12px"></textarea><p class="note">'+tx("go")+' <b>'+esc(CFG.wechat)+'</b></p>';
  for(var k in old)document.getElementById(k).value=old[k];document.getElementById("fg").checked=!!was}
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function applyCfg(c){
+ if(c.products&&c.products.length)PRODUCTS=c.products.map(function(r){return{id:+r.id,e:r.emoji||"🛍️",zh:r.zh||"",ko:r.ko||r.zh||"",brand:r.brand||"",krw:+r.krw||0,img:r.img||"",sold:r.sold==="Y"}});
+ var o=c.settings||{};
+ if(o.wechat)CFG.wechat=String(o.wechat);
+ if(+o.fee>0)CFG.fee=+o.fee;
+ if(o.min!==undefined&&o.min!=="")CFG.min=+o.min;
+ if(+o.rate>0)CFG.rate=+o.rate;
+ if(+o.ship5>0&&+o.ship10>0)CFG.ship=[{k:5,krw:+o.ship5},{k:10,krw:+o.ship10}];
+ cfgState="ok"}
+if(CFG.endpoint.indexOf("http")==0){
+ try{var cc=localStorage.getItem("cfg");if(cc)applyCfg(JSON.parse(cc))}catch(e){}
+ fetch(CFG.endpoint+"?action=config").then(function(r){return r.json()}).then(function(c){applyCfg(c);try{localStorage.setItem("cfg",JSON.stringify(c))}catch(e){}draw()}).catch(function(){if(!PRODUCTS.length)cfgState="fail";draw()});
+}
 draw();
 </script></body></html>
